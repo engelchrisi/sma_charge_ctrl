@@ -1,0 +1,17 @@
+{
+  "domain": "sma_charge_ctrl",
+  "name": "SMA Charge Controller",
+  "codeowners": [
+    "@engelchrisi"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "integration_type": "helper",
+  "documentation": "https://github.com/engelchrisi/sma_charge_ctrl",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/engelchrisi/sma_charge_ctrl/issues",
+  "requirements": [
+    "pymodbus"
+  ],
+  "version": "0.1.0"
+}
