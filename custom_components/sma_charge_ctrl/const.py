@@ -1,4 +1,5 @@
 """SMA Charge Ctrl."""
+from datetime import timedelta
 from typing import Final
 
 # Base component constants
@@ -41,3 +42,5 @@ ATTR_TO_PROPERTY: Final = [
     ATTR_UNIT_ID,
     ATTR_HOST_PORT,
 ]
+
+UPDATE_MIN_TIME: Final = timedelta(seconds=60)

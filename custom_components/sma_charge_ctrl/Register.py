@@ -37,13 +37,20 @@ class ModbusRegisterBase:  # noqa: D101
     value: Optional[ValueWithTimestamp]
 
     def __init__(  # noqa: D107
-        self, reg_id: int, slave_id: int, name: str, description: str, length: int
+        self,
+        reg_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        length: int,
+        scale_factor: float = None,
     ) -> None:
         self.id = reg_id
         self.slave_id = slave_id
         self.name = name
         self.description = description
         self.length = length
+        self.scale_factor = scale_factor
         self.value = None
 
     def __str__(self):  # noqa: D105
@@ -67,6 +74,8 @@ class ModbusRegisterBase:  # noqa: D101
         else:
             registers = response.registers
             val = self._decode_value(registers)
+            if self.scale_factor is not None:
+                val = float(val) * self.scale_factor
             self.value = ValueWithTimestamp(val)
             return self.value
 
@@ -95,9 +104,16 @@ class ModbusRegisterBase:  # noqa: D101
 
 class S16(ModbusRegisterBase):  # noqa: D101
     def __init__(  # noqa: D107
-        self, register_id: int, slave_id: int, name: str, description: str
+        self,
+        register_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        scale_factor: float = None,
     ) -> None:
-        ModbusRegisterBase.__init__(self, register_id, slave_id, name, description, 1)
+        ModbusRegisterBase.__init__(
+            self, register_id, slave_id, name, description, 1, scale_factor=scale_factor
+        )
 
     def _encode_value(self, value_to_write) -> []:
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
@@ -116,9 +132,16 @@ class S16(ModbusRegisterBase):  # noqa: D101
 
 class S32(ModbusRegisterBase):  # noqa: D101
     def __init__(  # noqa: D107
-        self, register_id: int, slave_id: int, name: str, description: str
+        self,
+        register_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        scale_factor: float = None,
     ) -> None:
-        ModbusRegisterBase.__init__(self, register_id, slave_id, name, description, 2)
+        ModbusRegisterBase.__init__(
+            self, register_id, slave_id, name, description, 2, scale_factor=scale_factor
+        )
 
     def _encode_value(self, value_to_write) -> []:
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
@@ -137,9 +160,16 @@ class S32(ModbusRegisterBase):  # noqa: D101
 
 class U16(ModbusRegisterBase):  # noqa: D101
     def __init__(  # noqa: D107
-        self, register_id: int, slave_id: int, name: str, description: str
+        self,
+        register_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        scale_factor: float = None,
     ) -> None:
-        ModbusRegisterBase.__init__(self, register_id, slave_id, name, description, 1)
+        ModbusRegisterBase.__init__(
+            self, register_id, slave_id, name, description, 1, scale_factor=scale_factor
+        )
 
     def _encode_value(self, value_to_write) -> []:
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
@@ -158,9 +188,16 @@ class U16(ModbusRegisterBase):  # noqa: D101
 
 class U32(ModbusRegisterBase):  # noqa: D101
     def __init__(  # noqa: D107
-        self, register_id: int, slave_id: int, name: str, description: str
+        self,
+        register_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        scale_factor: float = None,
     ) -> None:
-        ModbusRegisterBase.__init__(self, register_id, slave_id, name, description, 2)
+        ModbusRegisterBase.__init__(
+            self, register_id, slave_id, name, description, 2, scale_factor=scale_factor
+        )
 
     def _encode_value(self, value_to_write) -> []:
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
@@ -179,9 +216,16 @@ class U32(ModbusRegisterBase):  # noqa: D101
 
 class U64(ModbusRegisterBase):  # noqa: D101
     def __init__(  # noqa: D107
-        self, register_id: int, slave_id: int, name: str, description: str
+        self,
+        register_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        scale_factor: float = None,
     ) -> None:
-        ModbusRegisterBase.__init__(self, register_id, slave_id, name, description, 4)
+        ModbusRegisterBase.__init__(
+            self, register_id, slave_id, name, description, 4, scale_factor=scale_factor
+        )
 
     def _encode_value(self, value_to_write) -> []:
         builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
@@ -200,7 +244,12 @@ class U64(ModbusRegisterBase):  # noqa: D101
 
 class STR32(ModbusRegisterBase):  # noqa: D101
     def __init__(  # noqa: D107
-        self, register_id: int, slave_id: int, name: str, description: str
+        self,
+        register_id: int,
+        slave_id: int,
+        name: str,
+        description: str,
+        scale_factor: float = None,
     ) -> None:
         ModbusRegisterBase.__init__(self, register_id, slave_id, name, description, 8)
 

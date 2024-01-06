@@ -8,7 +8,12 @@ from typing import Any, Optional
 from pymodbus.client import ModbusTcpClient
 import voluptuous as vol
 
-from homeassistant.components.sensor import SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -20,7 +25,8 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
-from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.util import Throttle
 
 from .const import (
     ATTR_ADDRESS,
@@ -29,8 +35,10 @@ from .const import (
     ATTR_TO_PROPERTY,
     ATTR_UNIT_ID,
     DEFAULT_NAME,
+    DOMAIN,
+    UPDATE_MIN_TIME,
 )
-from .Register import S32, U32, U64, ModbusRegisterBase
+from .Register import S32, U32, ModbusRegisterBase
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -74,46 +82,77 @@ async def async_setup_platform(
         host=config[CONF_HOST], port=config[CONF_PORT], timeout=30.0, debug=False
     )
     sensors = [
-        ModbusRegisterSensor(mdb_cl, U32(30053, unit_id, "DevTypeId", "Gerätetyp")),
-        ModbusRegisterSensor(mdb_cl, S32(30775, unit_id, "PowerAC", "Leistung")),
-        ModbusRegisterSensor(
-            mdb_cl, U32(30783, unit_id, "GridV1", "Netzspannung Phase L1")
-        ),
-        ModbusRegisterSensor(
-            mdb_cl, S32(30845, unit_id, "Bat.SOC", "Batterieladezustand in %")
-        ),
-        ModbusRegisterSensor(mdb_cl, S32(30865, unit_id, "TotWIn", "Leistung Bezug")),
+        SmaChargingSwitch("SMA Charge Switch", mdb_cl),
+        # --------------------------------------------
+        # ModbusRegisterSensor(
+        #     mdb_cl, U32(30053, unit_id, "DevTypeId", "Gerätetyp"), device_class=None
+        # ),
         ModbusRegisterSensor(
             mdb_cl,
-            S32(30867, unit_id, "Metering.GridMs.TotWOut", "Leistung Einspeisung"),
+            S32(30775, unit_id, "PowerAC", "Leistung"),
+            device_class=SensorDeviceClass.POWER,
+            unit_of_measurement="W",
         ),
         ModbusRegisterSensor(
             mdb_cl,
-            U32(
-                31007,
-                unit_id,
-                "RmgChaTm",
-                "Verbleibende Absorptionszeit der aktuellen Batterieladephase, in s",
-            ),
+            U32(30783, unit_id, "GridV1", "Netzspannung Phase L1", scale_factor=0.01),
+            device_class=SensorDeviceClass.VOLTAGE,
+            unit_of_measurement="V",
         ),
         ModbusRegisterSensor(
-            mdb_cl, U32(31393, unit_id, "BatChrg.CurBatCha", "Momentane Batterieladung")
+            mdb_cl,
+            S32(30845, unit_id, "Bat.SOC", "Batterieladezustand"),
+            device_class=SensorDeviceClass.BATTERY,
+            unit_of_measurement="%",
+        ),
+        ModbusRegisterSensor(
+            mdb_cl,
+            S32(30865, unit_id, "TotWIn", "Leistung Bezug"),
+            device_class=SensorDeviceClass.POWER,
+            unit_of_measurement="W",
+        ),
+        ModbusRegisterSensor(
+            mdb_cl,
+            S32(30867, unit_id, "TotWOut", "Leistung Einspeisung"),
+            device_class=SensorDeviceClass.POWER,
+            unit_of_measurement="W",
+        ),
+        ModbusRegisterSensor(
+            mdb_cl,
+            U32(31007, unit_id, "RmgChaTm", "Restzeit der Batterieladephase"),
+            device_class=SensorDeviceClass.DURATION,
+            unit_of_measurement="s",
+        ),
+        ModbusRegisterSensor(
+            mdb_cl,
+            U32(31393, unit_id, "BatChrg.CurBatCha", "Momentane Batterieladung"),
+            device_class=SensorDeviceClass.POWER,
+            unit_of_measurement="W",
         ),
         ModbusRegisterSensor(
             mdb_cl,
             U32(31395, unit_id, "BatDsch.CurBatDsch", "Momentane Batterieentladung"),
+            device_class=SensorDeviceClass.POWER,
+            unit_of_measurement="W",
         ),
-        ModbusRegisterSensor(
-            mdb_cl, U64(31397, unit_id, "BatChrg.BatChrg", "Batterieladung")
-        ),
-        ModbusRegisterSensor(
-            mdb_cl, U64(31401, unit_id, "BatDsch.BatDsch", "Batterieentladung")
-        ),
+        # ModbusRegisterSensor(
+        #     mdb_cl,
+        #     U64(31397, unit_id, "BatChrg.BatChrg", "Batterieladung"),
+        #     device_class=SensorDeviceClass.POWER,
+        #     unit_of_measurement="W",
+        # ),
+        # ModbusRegisterSensor(
+        #     mdb_cl,
+        #     U64(31401, unit_id, "BatDsch.BatDsch", "Batterieentladung"),
+        #     device_class=SensorDeviceClass.POWER,
+        #     unit_of_measurement="W",
+        # ),
     ]
     async_add_entities(sensors, update_before_add=True)
 
 
-class ModbusRegisterSensor(Entity):
+# s. /workspaces/ha-core/homeassistant/components/demo/sensor.py
+class ModbusRegisterSensor(SensorEntity):
     """Representation of a register specific sensor."""
 
     _unrecorded_attributes = frozenset(
@@ -121,9 +160,13 @@ class ModbusRegisterSensor(Entity):
     )
 
     def __init__(
-        self, pymodbus_client: ModbusTcpClient, register: ModbusRegisterBase
+        self,
+        pymodbus_client: ModbusTcpClient,
+        register: ModbusRegisterBase,
+        device_class: SensorDeviceClass = SensorDeviceClass.VOLTAGE,
+        unit_of_measurement: str = None,
     ) -> None:
-        """Bla."""
+        """Initialize the sensor."""
         super().__init__()
 
         self._pymodbus_client = pymodbus_client
@@ -138,11 +181,12 @@ class ModbusRegisterSensor(Entity):
             + str(pymodbus_client.comm_params.port)
         )
 
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_name = register.name
         self._attr_native_value = None
-        self._attr_native_unit_of_measurement = None
-        self._attr_icon = None
         self._attr_state_class = SensorStateClass.MEASUREMENT
+        # self._attr_icon = None
         self._attr_device_class = None
         #
         self._attr_unique_id = (
@@ -189,8 +233,9 @@ class ModbusRegisterSensor(Entity):
         }
         return state_attr
 
+    @Throttle(UPDATE_MIN_TIME)
     async def async_update(self):
-        """Bla."""
+        """Re-read via modbus."""
         value = self._register.read_value(self._pymodbus_client)
         self._attr_native_value = value.value if value is not None else None
         self.last_timestamp = self._register.last_timestamp
@@ -200,3 +245,45 @@ class ModbusRegisterSensor(Entity):
             self._attr_native_value,
             self._attr_native_unit_of_measurement,
         )
+
+
+# s. /workspaces/ha-core/homeassistant/components/demo/switch.py
+class SmaChargingSwitch(SwitchEntity):
+    """Class to switch on/off charging."""
+
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_should_poll = False
+
+    def __init__(self, name, pymodbus_client: ModbusTcpClient) -> None:  # noqa: D107
+        self._name = name
+        self._pymodbus_client = pymodbus_client
+
+        self._attr_name = name
+        self._attr_is_on = False
+        self._attr_device_class = SwitchDeviceClass.SWITCH
+        self._attr_unique_id = name + "_" + str(pymodbus_client)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._attr_unique_id)},
+            name=name,
+        )
+
+    # @property
+    # def name(self):  # noqa: D102
+    #     return self._name
+
+    @property
+    def is_on(self):  # noqa: D102
+        return bool(self._attr_is_on)
+
+    def turn_on(self, **kwargs):
+        """Turn the device on."""
+        self._attr_is_on = True
+        self.schedule_update_ha_state()
+        _LOGGER.debug("Charging turned ON")
+
+    def turn_off(self, **kwargs):
+        """Turn the device off."""
+        self._attr_is_on = False
+        self.schedule_update_ha_state()
+        _LOGGER.debug("Charging turned OFF")
