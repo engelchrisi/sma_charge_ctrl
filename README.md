@@ -1,12 +1,19 @@
-# Github Custom for Home Assistant
+# SMA Charge Ctrl 
 
 ## About 
 
-This repo contains a custom component for [Home Assistant](https://www.home-assistant.io) that was created in a tutorial series 
-on [aarongodfrey.dev]().
+The result of this project shall be a simple custom control for home assistant used to switch on battery charging from net via a simple switch.
 
-The tutorial walks through the steps to create a custom component for use in Home Assistant.
+This project is UNDER CONSTRUCTION.
 
-## What It Is
+Feel free to clone and adapt to your needs.
 
-An integration that monitors [GitHub](https://github.com/) repositories specified in a `configuration.yaml` file.
+## Cudos
+
+Ideas and code snippets are taken from:
+
+The average sensor:
+https://github.com/Limych/ha-average
+
+A great and helpful tutorial:
+https://github.com/boralyl/github-custom-component-tutorial

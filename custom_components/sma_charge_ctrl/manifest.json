@@ -4,7 +4,7 @@
   "codeowners": [
     "@engelchrisi"
   ],
-  "config_flow": true,
+  "config_flow": false,
   "dependencies": [],
   "integration_type": "helper",
   "documentation": "https://github.com/engelchrisi/sma_charge_ctrl",
