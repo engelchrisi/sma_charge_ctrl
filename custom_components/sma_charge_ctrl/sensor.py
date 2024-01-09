@@ -1,6 +1,8 @@
-# noqa: D102
-"""sma charge ctrl sensor platform."""
-from collections.abc import Mapping
+"""GitHub sensor platform."""
+from __future__ import annotations
+
+from collections.abc import Callable, Mapping
+from datetime import timedelta
 import logging
 from typing import Any, Optional
 
@@ -8,12 +10,13 @@ from typing import Any, Optional
 from pymodbus.client import ModbusTcpClient
 import voluptuous as vol
 
+from homeassistant import config_entries, core
 from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA,
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import (
     CONF_HOST,
     CONF_NAME,
@@ -22,10 +25,8 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
     STATE_UNKNOWN,
 )
-from homeassistant.core import HomeAssistant
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.config_validation import PLATFORM_SCHEMA
-from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.util import Throttle
 
 from .const import (
@@ -34,6 +35,7 @@ from .const import (
     ATTR_HOST_PORT,
     ATTR_TO_PROPERTY,
     ATTR_UNIT_ID,
+    CONF_UNIT_ID,
     DEFAULT_NAME,
     DOMAIN,
     UPDATE_MIN_TIME,
@@ -41,49 +43,71 @@ from .const import (
 from .Register import S32, U32, ModbusRegisterBase
 
 _LOGGER = logging.getLogger(__name__)
+# Time between updating data from GitHub
+SCAN_INTERVAL = timedelta(minutes=10)
 
-CONF_UNIT_ID = "unit_id"
-PLATFORM_SCHEMA = vol.All(
-    PLATFORM_SCHEMA.extend(
-        {
-            vol.Optional(CONF_UNIQUE_ID): cv.string,
-            vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-            vol.Required(CONF_HOST): cv.string,
-            vol.Required(CONF_PORT): cv.port,
-            vol.Required(CONF_UNIT_ID): cv.positive_int,
-        }
-    )
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Optional(CONF_UNIQUE_ID): cv.string,
+        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Required(CONF_HOST): cv.string,
+        vol.Required(CONF_PORT): cv.port,
+        vol.Required(CONF_UNIT_ID): cv.positive_int,
+    }
 )
 
 
-# setting up the sensors from UI (config_flow.py)
-# s. https://aarongodfrey.dev/home%20automation/building_a_home_assistant_custom_component_part_3/
-# async def async_setup_entry(
-#     hass: HomeAssistant, entry: config_entries.ConfigEntry
-# ) -> bool:
-#     """Set up platform from a ConfigEntry."""
-#     hass.data.setdefault(DOMAIN, {})
-#     hass_data = dict(entry.data)
-#     # Registers update listener to update config entry when options are updated.
-#     unsub_options_update_listener = entry.add_update_listener(options_update_listener)
-#     # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
-#     hass_data["unsub_options_update_listener"] = unsub_options_update_listener
-#     hass.data[DOMAIN][entry.entry_id] = hass_data
+async def async_setup_entry(  # noqa: D103
+    hass: core.HomeAssistant,
+    config_entry: config_entries.ConfigEntry,
+    async_add_entities,
+) -> None:
+    config = hass.data[DOMAIN][config_entry.entry_id]
+    # Update our config to include new repos and remove those that have been removed.
+    if config_entry.options:
+        config.update(config_entry.options)
+
+    # session = async_get_clientsession(hass)
+
+    unit_id = config[CONF_UNIT_ID]  # noqa: F841
+    mdb_cl = ModbusTcpClient(
+        host=config[CONF_HOST],
+        port=config[CONF_PORT],
+        timeout=30.0,
+        debug=False,
+    )
+    if not mdb_cl:
+        return False
+
+    sensors = create_sensors(mdb_cl, unit_id)
+    async_add_entities(sensors)
 
 
-# pylint: disable=unused-argument
 async def async_setup_platform(
-    hass: HomeAssistant, config, async_add_entities, discovery_info=None
-):
+    hass: core.HomeAssistant,
+    config: ConfigType,
+    async_add_entities: Callable,
+    discovery_info: DiscoveryInfoType | None = None,
+) -> None:
     """Set up the sensor platform."""
     # session = async_get_clientsession(hass)
-    unit_id = config[CONF_UNIT_ID]
+
+    unit_id = config[CONF_UNIT_ID]  # noqa: F841
     mdb_cl = ModbusTcpClient(
-        host=config[CONF_HOST], port=config[CONF_PORT], timeout=30.0, debug=False
+        host=config[CONF_HOST],
+        port=config[CONF_PORT],
+        timeout=30.0,
+        debug=False,
     )
+    if not mdb_cl:
+        return False
+
+    sensors = create_sensors(mdb_cl, unit_id)
+    async_add_entities(sensors)
+
+
+def create_sensors(mdb_cl: ModbusTcpClient, unit_id: int):  # noqa: D103
     sensors = [
-        SmaChargingSwitch("SMA Charge Switch", mdb_cl),
-        # --------------------------------------------
         # ModbusRegisterSensor(
         #     mdb_cl, U32(30053, unit_id, "DevTypeId", "Gerätetyp"), device_class=None
         # ),
@@ -148,7 +172,8 @@ async def async_setup_platform(
         #     unit_of_measurement="W",
         # ),
     ]
-    async_add_entities(sensors, update_before_add=True)
+
+    return sensors
 
 
 # s. /workspaces/ha-core/homeassistant/components/demo/sensor.py
@@ -245,45 +270,3 @@ class ModbusRegisterSensor(SensorEntity):
             self._attr_native_value,
             self._attr_native_unit_of_measurement,
         )
-
-
-# s. /workspaces/ha-core/homeassistant/components/demo/switch.py
-class SmaChargingSwitch(SwitchEntity):
-    """Class to switch on/off charging."""
-
-    _attr_has_entity_name = True
-    _attr_name = None
-    _attr_should_poll = False
-
-    def __init__(self, name, pymodbus_client: ModbusTcpClient) -> None:  # noqa: D107
-        self._name = name
-        self._pymodbus_client = pymodbus_client
-
-        self._attr_name = name
-        self._attr_is_on = False
-        self._attr_device_class = SwitchDeviceClass.SWITCH
-        self._attr_unique_id = name + "_" + str(pymodbus_client)
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._attr_unique_id)},
-            name=name,
-        )
-
-    # @property
-    # def name(self):  # noqa: D102
-    #     return self._name
-
-    @property
-    def is_on(self):  # noqa: D102
-        return bool(self._attr_is_on)
-
-    def turn_on(self, **kwargs):
-        """Turn the device on."""
-        self._attr_is_on = True
-        self.schedule_update_ha_state()
-        _LOGGER.debug("Charging turned ON")
-
-    def turn_off(self, **kwargs):
-        """Turn the device off."""
-        self._attr_is_on = False
-        self.schedule_update_ha_state()
-        _LOGGER.debug("Charging turned OFF")

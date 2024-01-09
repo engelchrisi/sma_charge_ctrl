@@ -21,12 +21,10 @@ Clone this depot to adapt your own SMA device:
 -------------------------------------------------------------------
 """
 
-PLATFORMS = [
-    Platform.SENSOR,
-]
+PLATFORMS = [Platform.SENSOR]  # , Platform.SWITCH
 
 # Defaults
-DEFAULT_NAME: Final = "SmaChargeController"
+DEFAULT_NAME: Final = "Sunny Boy Storage"
 
 # Attributes
 ATTR_HOST_PORT: Final = "host_port"
@@ -42,5 +40,7 @@ ATTR_TO_PROPERTY: Final = [
     ATTR_UNIT_ID,
     ATTR_HOST_PORT,
 ]
+
+CONF_UNIT_ID = "unit_id"
 
 UPDATE_MIN_TIME: Final = timedelta(seconds=60)

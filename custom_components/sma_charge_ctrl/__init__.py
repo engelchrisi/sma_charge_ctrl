@@ -1,55 +1,56 @@
-# s. https://aarongodfrey.dev/home%20automation/building_a_home_assistant_custom_component_part_1/
 """SMA Chart Ctrl Custom Component."""
 import logging
 
-import voluptuous as vol
+from homeassistant import config_entries, core
+from homeassistant.const import Platform
 
-from homeassistant.const import SERVICE_RELOAD
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers.entity_component import EntityComponent
-from homeassistant.helpers.reload import async_reload_integration_platforms
-from homeassistant.helpers.typing import ConfigType
-
-from .const import DOMAIN, PLATFORMS, STARTUP_MESSAGE
-
-
-
-
-# async def async_setup_entry(
-#     hass: core.HomeAssistant, entry: config_entries.ConfigEntry
-# ) -> bool:
-#     """Set up platform from a ConfigEntry."""
-#     hass.data.setdefault(DOMAIN, {})
-#     hass.data[DOMAIN][entry.entry_id] = entry.data
-
-#     # Forward the setup to the sensor platform.
-#     hass.async_create_task(
-#         hass.config_entries.async_forward_entry_setup(entry, "sensor")
-#     )
-#     return True
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-# s. https://github.com/Limych/ha-average/blob/dev/custom_components/average/__init__.py
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the platforms."""
-    # Print startup message
-    _LOGGER.info(STARTUP_MESSAGE)
+PLATFORMS = [Platform.SENSOR]
 
-    # await async_setup_reload_service(hass, DOMAIN, PLATFORMS)
 
-    component = EntityComponent(_LOGGER, DOMAIN, hass)  # noqa: F841
+async def async_setup_entry(
+    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+) -> bool:
+    """Set up platform from a ConfigEntry."""
+    hass.data.setdefault(DOMAIN, {})
+    hass_data = dict(entry.data)
+    # Registers update listener to update config entry when options are updated.
+    unsub_options_update_listener = entry.add_update_listener(options_update_listener)
+    # Store a reference to the unsubscribe function to cleanup if an entry is unloaded.
+    hass_data["unsub_options_update_listener"] = unsub_options_update_listener
+    hass.data[DOMAIN][entry.entry_id] = hass_data
 
-    async def reload_service_handler(service: ServiceCall) -> None:
-        """Reload all average sensors from config."""
-        # print("+++++++++++++++++++++++++")
-        # print(component)
-        # print(hass.data[DATA_INSTANCES]["sensor"].entities[0])
-
-        await async_reload_integration_platforms(hass, DOMAIN, PLATFORMS)
-
-    hass.services.async_register(
-        DOMAIN, SERVICE_RELOAD, reload_service_handler, schema=vol.Schema({})
+    # Forward the setup to the sensor platform.
+    hass.async_create_task(
+        hass.config_entries.async_forward_entry_setup(entry, "sensor")
     )
+    return True
 
+
+async def options_update_listener(
+    hass: core.HomeAssistant, config_entry: config_entries.ConfigEntry
+):
+    """Handle options update."""
+    await hass.config_entries.async_reload(config_entry.entry_id)
+
+
+async def async_unload_entry(
+    hass: core.HomeAssistant, entry: config_entries.ConfigEntry
+) -> bool:
+    """Unload a config entry."""
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        # Remove config entry from domain.
+        entry_data = hass.data[DOMAIN].pop(entry.entry_id)
+        # Remove options_update_listener.
+        entry_data["unsub_options_update_listener"]()
+
+    return unload_ok
+
+
+async def async_setup(hass: core.HomeAssistant, config: dict) -> bool:
+    """Set up the GitHub Custom component from yaml configuration."""
+    hass.data.setdefault(DOMAIN, {})
     return True
