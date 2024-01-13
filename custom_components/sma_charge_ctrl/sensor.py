@@ -1,7 +1,6 @@
 """Sma Charge Ctrl sensor platform."""
 from __future__ import annotations
 
-from collections.abc import Callable
 import logging
 
 from homeassistant import config_entries, core
@@ -21,7 +20,7 @@ async def async_setup_entry(  # noqa: D103
     async_add_entities,
 ) -> None:
     """Set up sensors."""
-    _LOGGER.debug("sensors.async_setup_entry")
+    _LOGGER.debug("sensor.async_setup_entry")
     hub: ModbusHostHub = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = create_sensors(hub)

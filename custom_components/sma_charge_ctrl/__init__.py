@@ -9,7 +9,7 @@ from .modbus_host import ModbusHostHub
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR]  # , Platform.SWITCH]
+PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
 
 
 async def async_setup_entry(
