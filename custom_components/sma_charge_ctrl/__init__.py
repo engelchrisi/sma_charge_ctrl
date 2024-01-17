@@ -1,15 +1,63 @@
 """SMA Chart Ctrl Custom Component."""
 import logging
 
+from pymodbus.client import ModbusTcpClient
+
 from homeassistant import config_entries, core
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, Platform
 
+from .api import Api
 from .const import CONF_UNIT_ID, DOMAIN
 from .modbus_host import ModbusHostHub
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.SENSOR]  # , Platform.SWITCH]
+
+
+def _setup_services(hass: core.HomeAssistant, client: ModbusTcpClient, unit_id: int):
+    """Set up is called when Home Assistant is loading our component."""
+    _LOGGER.debug("__init__._setup_services")
+
+    Api.get_default_values(client, unit_id)
+
+    def _battery_start_charging_from_net(call: core.ServiceCall) -> None:
+        """Handle the service call."""
+        charge_power = call.data.get("charge_power", -1)
+        Api.battery_start_charging_from_net(client, unit_id, charge_power)
+
+    hass.services.async_register(
+        DOMAIN, "battery_start_charging_from_net", _battery_start_charging_from_net
+    )
+
+    def _battery_stop_charging_from_net(call: core.ServiceCall) -> None:
+        """Handle the service call."""
+        discharge_power = call.data.get("discharge_power", 0)
+        Api.battery_stop_charging_from_net(client, unit_id, discharge_power)
+
+    hass.services.async_register(
+        DOMAIN, "battery_stop_charging_from_net", _battery_stop_charging_from_net
+    )
+
+    def _battery_start_discharging(call: core.ServiceCall) -> None:
+        """Handle the service call."""
+        discharge_power = call.data.get("discharge_power", 1500)
+        Api.battery_start_discharging(client, unit_id, discharge_power)
+
+    hass.services.async_register(
+        DOMAIN, "battery_start_discharging", _battery_start_discharging
+    )
+
+    def _battery_stop_discharging(call: core.ServiceCall) -> None:
+        """Stop the battery from discharging its energy."""
+        Api.battery_stop_discharging(client, unit_id)
+
+    hass.services.async_register(
+        DOMAIN, "battery_stop_discharging", _battery_stop_discharging
+    )
+
+    # Return boolean to indicate that initialization was successful.
+    return True
 
 
 async def async_setup_entry(
@@ -29,6 +77,8 @@ async def async_setup_entry(
         unit_id=int(hass_data[CONF_UNIT_ID]),
     )
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = mdb_host
+
+    _setup_services(hass, mdb_host.mdb_cl, mdb_host.unit_id)
 
     # This creates each HA object for each platform your device requires.
     # It's done by calling the `async_setup_entry` function in each platform module.

@@ -9,7 +9,7 @@ from homeassistant.components.sensor import SensorDeviceClass
 from .const import DOMAIN
 from .modbus_host import ModbusHostHub
 from .modbus_register_sensor import ModbusRegisterSensor
-from .Register import S32, U32
+from .register import S32, U32
 
 _LOGGER = logging.getLogger(__name__)
 

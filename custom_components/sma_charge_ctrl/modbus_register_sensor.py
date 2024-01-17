@@ -20,7 +20,7 @@ from .const import (
     ATTR_TO_PROPERTY,
     ATTR_UNIT_ID,
 )
-from .Register import ModbusRegisterBase
+from .register import ModbusRegisterBase
 
 _LOGGER = logging.getLogger(__name__)
 

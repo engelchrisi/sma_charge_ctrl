@@ -1,0 +1,24 @@
+battery_start_charging_from_net:
+  description: Start the battery loading from net.
+  fields:
+    charge_power:
+      description: Power in W to load from net. If negative then max value is taken.
+      default: -1
+      example: "3680"
+battery_stop_charging_from_net:
+  fields:
+    discharge_power:
+      description: Power in W to unload energy from battery. If negative then max value is taken.
+      default: 0
+      example: "3680"
+  description: Stop the battery loading from net and allow or disallow discharging.
+
+battery_start_discharging:
+  fields:
+    discharge_power:
+      description: Power in W to unload energy from battery. If negative then max value is taken.
+      default: 1500
+      example: "3680"
+  description: Allow the battery to discharge its energy.
+battery_stop_discharging:
+  description: Stop the battery from discharging its energy.
