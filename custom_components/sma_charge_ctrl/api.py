@@ -40,7 +40,7 @@ class Api:
         # Close the connection
         client.close()
 
-        _LOGGER.debug(
+        _LOGGER.info(
             "max_charge_power_battery=%iW, max_discharge_power_battery=%iW",
             Api.max_charge_power_battery,
             Api.max_discharge_power_battery,
@@ -83,12 +83,12 @@ class Api:
             40795, unit_id, "BatChaMaxW", "Maximale Batterieladeleistung, in W [WO]"
         )
         register.write_value(client, max_chrg)
-        _LOGGER.debug("%s:=%i", register.name, max_chrg)
+        _LOGGER.info("%s:=%i", register.name, max_chrg)
         register = U32(
             40799, unit_id, "BatDschMaxW", "Maximale Batterieentladeleistung, in W [WO]"
         )
         register.write_value(client, 0)
-        _LOGGER.debug("%s:=%i", register.name, 0)
+        _LOGGER.info("%s:=%i", register.name, 0)
 
         time.sleep(1)  # s
 
@@ -100,13 +100,13 @@ class Api:
         )
         value_to_write = 802  # aktiv
         register.write_value(client, value_to_write)
-        _LOGGER.debug("%s:=%i", register.name, value_to_write)
+        _LOGGER.info("%s:=%i", register.name, value_to_write)
 
         # TODO: max_chrg * (253 / 230);              //max power bei 253V
         pwr_at_com = -max_chrg
         register = S32(40149, unit_id, "FedInPwrAtCom", "Wirkleistungsvorgabe [WO]")
         register.write_value(client, pwr_at_com)  # min -3680
-        _LOGGER.debug("%s:=%i", register.name, pwr_at_com)
+        _LOGGER.info("%s:=%i", register.name, pwr_at_com)
 
         # Close the connection
         client.close()
@@ -127,7 +127,7 @@ class Api:
             40795, unit_id, "BatChaMaxW", "Maximale Batterieladeleistung, in W [WO]"
         )
         register.write_value(client, 0)
-        _LOGGER.debug("%s:=%i", register.name, 0)
+        _LOGGER.info("%s:=%i", register.name, 0)
 
         time.sleep(1)  # s
 
@@ -171,12 +171,12 @@ class Api:
             40795, unit_id, "BatChaMaxW", "Maximale Batterieladeleistung, in W [WO]"
         )
         register.write_value(client, max_chrg)
-        _LOGGER.debug("%s:=%i", register.name, max_chrg)
+        _LOGGER.info("%s:=%i", register.name, max_chrg)
         register = U32(
             40799, unit_id, "BatDschMaxW", "Maximale Batterieentladeleistung, in W [WO]"
         )
         register.write_value(client, max_dischrg)
-        _LOGGER.debug("%s:=%i", register.name, max_dischrg)
+        _LOGGER.info("%s:=%i", register.name, max_dischrg)
 
         time.sleep(1)  # s
 
@@ -188,7 +188,7 @@ class Api:
         )
         value_to_write = 803  # 803 inaktiv !!!
         register.write_value(client, value_to_write)
-        _LOGGER.debug("%s:=%i", register.name, value_to_write)
+        _LOGGER.info("%s:=%i", register.name, value_to_write)
 
         # Close the connection
         client.close()
@@ -208,7 +208,7 @@ class Api:
             40799, unit_id, "BatDschMaxW", "Maximale Batterieentladeleistung, in W [WO]"
         )
         register.write_value(client, max_dischrg)
-        _LOGGER.debug("%s:=%i", register.name, max_dischrg)
+        _LOGGER.info("%s:=%i", register.name, max_dischrg)
 
         time.sleep(1)  # s
 
@@ -220,12 +220,12 @@ class Api:
         )
         value_to_write = 802  # 802 aktiv, 803 inaktiv
         register.write_value(client, value_to_write)
-        _LOGGER.debug("%s:=%i", register.name, value_to_write)
+        _LOGGER.info("%s:=%i", register.name, value_to_write)
 
         register = S32(40149, unit_id, "FedInPwrAtCom", "Wirkleistungsvorgabe [WO]")
         pwr_at_com = max_dischrg
         register.write_value(client, pwr_at_com)  # max 3680
-        _LOGGER.debug("%s:=%i", register.name, pwr_at_com)
+        _LOGGER.info("%s:=%i", register.name, pwr_at_com)
 
         # Close the connection
         client.close()
