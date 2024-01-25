@@ -30,6 +30,14 @@ def _setup_services(hass: core.HomeAssistant, client: ModbusTcpClient, unit_id: 
         DOMAIN, "battery_start_charging_from_net", _battery_start_charging_from_net
     )
 
+    def _battery_start_charging_from_pv(call: core.ServiceCall) -> None:
+        """Start the battery loading from PV + discharging."""
+        Api.battery_start_charging_from_pv(client, unit_id)
+
+    hass.services.async_register(
+        DOMAIN, "battery_start_charging_from_pv", _battery_start_charging_from_pv
+    )    
+
     def _battery_stop_charging_from_net(call: core.ServiceCall) -> None:
         """Handle the service call."""
         discharge_power = call.data.get("discharge_power", 0)
