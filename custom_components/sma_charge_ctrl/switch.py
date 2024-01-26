@@ -1,7 +1,6 @@
 """sma charge ctrl sensor platform."""
 # s. /workspaces/ha-core/homeassistant/components/demo/switch.py
 import logging
-import time
 
 from pymodbus.client import ModbusTcpClient
 
@@ -11,14 +10,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .api import (
-    battery_start_charging_from_net,
-    battery_start_discharging,
-    battery_stop_charging_from_net,
-    battery_stop_discharging,
-)
+from .api.api import Api
+from .api.modbus_host import ModbusHostHub
 from .const import DOMAIN
-from .modbus_host import ModbusHostHub
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,11 +101,11 @@ class SmaChargingSwitch(SmaSwitchBase):
     def start_charging_from_net(self):
         """Ladevorgang der Batterie vom Netz starten."""
 
-        return battery_start_charging_from_net(self._pymodbus_client, self._unit_id)
+        return Api.battery_start_charging_from_net(self._pymodbus_client, self._unit_id)
 
     def stop_charging_from_net(self):
         """Ladevorgang beenden, Entladevorgang der Batterie erlauben."""
-        return battery_stop_charging_from_net(
+        return Api.battery_stop_charging_from_net(
             self._pymodbus_client, self._unit_id, discharge_power=0
         )
 
@@ -145,7 +139,7 @@ class SmaDischargingSwitch(SmaSwitchBase):
         """Entladevorgang der Batterie verbieten."""
         client = self._pymodbus_client
         unit_id = self._unit_id
-        return battery_start_discharging(client, unit_id, discharge_power=0)
+        return Api.battery_start_discharging(client, unit_id, discharge_power=0)
 
     def stop_discharging(self):
         """Entladevorgang der Batterie verbieten."""

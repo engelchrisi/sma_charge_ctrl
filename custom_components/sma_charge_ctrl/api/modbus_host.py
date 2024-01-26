@@ -1,10 +1,8 @@
 """The modbus host with everything related like sensors, switches."""
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from pymodbus.client import ModbusTcpClient
-
-from .modbus_register_sensor import ModbusRegisterSensor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 class ModbusHostHub:
     """Modbus Host."""
 
-    _child_sensors: Optional[list[ModbusRegisterSensor]]
+    _child_sensors: Optional[list[Any]]  # ModbusRegisterSensor
 
     def __init__(  # noqa: D107
         self, name: str, host: str, port: int, unit_id: int
@@ -50,7 +48,7 @@ class ModbusHostHub:
         return self._mdb_cl
 
     @property
-    def child_sensors(self) -> list[ModbusRegisterSensor]:  # noqa: D102
+    def child_sensors(self) -> list[Any]:  # noqa: D102
         return self._child_sensors
 
     @child_sensors.setter

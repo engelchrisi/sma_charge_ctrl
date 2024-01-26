@@ -10,7 +10,7 @@ from .register import S32, U32
 _LOGGER = logging.getLogger(__name__)
 
 
-class Api:
+class Api:  # noqa: D101
     max_charge_power_battery: int = 0
     max_discharge_power_battery: int = 0
 
@@ -40,7 +40,7 @@ class Api:
         # Close the connection
         client.close()
 
-        _LOGGER.info(
+        _LOGGER.debug(
             "max_charge_power_battery=%iW, max_discharge_power_battery=%iW",
             Api.max_charge_power_battery,
             Api.max_discharge_power_battery,
@@ -112,9 +112,7 @@ class Api:
         client.close()
 
     @staticmethod
-    def battery_start_charging_from_pv(
-        client: ModbusTcpClient, unit_id: int
-    ):
+    def battery_start_charging_from_pv(client: ModbusTcpClient, unit_id: int):
         """Start the battery loading from PV + discharging."""
 
         max_chrg = Api.max_charge_power_battery
@@ -171,7 +169,7 @@ class Api:
         _LOGGER.debug("%s:=%i", register.name, pwr_at_com)
 
         # Close the connection
-        client.close()        
+        client.close()
 
     @staticmethod
     def battery_stop_charging_from_net(

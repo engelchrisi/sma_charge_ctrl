@@ -6,9 +6,9 @@ from pymodbus.client import ModbusTcpClient
 from homeassistant import config_entries, core
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, Platform
 
-from .api import Api
+from .api.api import Api
+from .api.modbus_host import ModbusHostHub
 from .const import CONF_UNIT_ID, DOMAIN
-from .modbus_host import ModbusHostHub
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ def _setup_services(hass: core.HomeAssistant, client: ModbusTcpClient, unit_id: 
 
     hass.services.async_register(
         DOMAIN, "battery_start_charging_from_pv", _battery_start_charging_from_pv
-    )    
+    )
 
     def _battery_stop_charging_from_net(call: core.ServiceCall) -> None:
         """Handle the service call."""

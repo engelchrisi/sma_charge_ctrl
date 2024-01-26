@@ -13,6 +13,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 
+from .api.register import ModbusRegisterBase
 from .const import (
     ATTR_ADDRESS,
     ATTR_DESCRIPTION,
@@ -20,7 +21,6 @@ from .const import (
     ATTR_TO_PROPERTY,
     ATTR_UNIT_ID,
 )
-from .register import ModbusRegisterBase
 
 _LOGGER = logging.getLogger(__name__)
 

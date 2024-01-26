@@ -6,18 +6,18 @@ import logging
 from homeassistant import config_entries, core
 from homeassistant.components.sensor import SensorDeviceClass
 
+from .api.modbus_host import ModbusHostHub
+from .api.register import S32, U32
 from .const import DOMAIN
-from .modbus_host import ModbusHostHub
 from .modbus_register_sensor import ModbusRegisterSensor
-from .register import S32, U32
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(  # noqa: D103
-    hass: core.HomeAssistant,
-    config_entry: config_entries.ConfigEntry,
-    async_add_entities,
+        hass: core.HomeAssistant,
+        config_entry: config_entries.ConfigEntry,
+        async_add_entities,
 ) -> None:
     """Set up sensors."""
     _LOGGER.debug("sensor.async_setup_entry")
