@@ -48,14 +48,14 @@ class Api:  # noqa: D101
 
     @staticmethod
     def battery_start_charging_from_net(
-        client: ModbusTcpClient, unit_id: int, charge_power: int = None
+            client: ModbusTcpClient, unit_id: int, charge_power: int = None
     ):
         """Start the battery loading from net."""
 
         max_chrg = (
             charge_power
             if charge_power is not None
-            and 0 <= charge_power < Api.max_charge_power_battery
+               and 0 <= charge_power < Api.max_charge_power_battery
             else Api.max_charge_power_battery
         )
 
@@ -130,12 +130,12 @@ class Api:  # noqa: D101
             "CmpBMSOpMod",
             "Betriebsart des Batterie-Management-Systems: 303 = Aus, 308 = Ein, 2289 = Batterie laden, 2290 = Batterie entladen, 2424 = Voreinstellung [WO]",
         )
-        # register = U32(41259, "CmpBMSOpMod", unit_id, "Betriebsart des Batterie-Management-Systems: 303 = Aus, 308 = Ein, 2289 = Batterie laden, 2290 = Batterie entladen, 2424 = Voreinstellung [WO]")
-        # value_to_write= 308   # Ein(On)
-        value_to_write = 1438  # Automatik(Auto)
+        # register = U32(41259, unit_id, "CmpBMSOpMod", unit_id, "Betriebsart des Batterie-Management-Systems: 303 = Aus, 308 = Ein, 2289 = Batterie laden, 2290 = Batterie entladen, 2424 = Voreinstellung [WO]")
+        # value_to_write = 308  # Ein(On)
+        # value_to_write = 1438  # Automatik(Auto) => Note: only for 5 min.
         # value_to_write = 2289  # Batterie laden(BatChaMod)
         # value_to_write= 2290 # Batterie entladen(BatDschMod)
-        # value_to_write = 2424  # Voreinstellung(Dft)
+        value_to_write = 2424  # Voreinstellung(Dft)
         register.write_value(client, value_to_write)
 
         register = U32(
@@ -146,34 +146,36 @@ class Api:  # noqa: D101
         register = U32(
             40799, unit_id, "BatDschMaxW", "Maximale Batterieentladeleistung, in W [WO]"
         )
-        value_to_write = 802  # aktiv
-        register.write_value(client, value_to_write)
-        _LOGGER.debug("%s:=%i", register.name, value_to_write)
+        register.write_value(client, max_dischrg)
+        _LOGGER.info("%s:=%i", register.name, max_dischrg)
 
         time.sleep(1)  # s
 
-        register = U32(
-            40151,
-            unit_id,
-            "FedInSpntCom",
-            "Wirk- und Blindleistungsregelung über Kommunikation [WO]",
-        )
-        value_to_write = max_dischrg
-        register.write_value(client, value_to_write)
-        _LOGGER.debug("%s:=%i", register.name, value_to_write)
+        # register = U32(
+        #     40151,
+        #     unit_id,
+        #     "FedInSpntCom",
+        #     "Wirk- und Blindleistungsregelung über Kommunikation [WO]",
+        # )
+        #
+        # value_to_write = 802  # aktiv
+        # register.write_value(client, value_to_write)
+        # _LOGGER.debug("%s:=%i", register.name, value_to_write)
+        #
+        # time.sleep(1)  # s
 
-        # TODO: max_chrg * (253 / 230);              //max power bei 253V
-        pwr_at_com = max_chrg  # <<<<<<<<<<<<<<
-        register = S32(40149, unit_id, "FedInPwrAtCom", "Wirkleistungsvorgabe [WO]")
-        register.write_value(client, pwr_at_com)  # min -3680
-        _LOGGER.debug("%s:=%i", register.name, pwr_at_com)
+        # # TODO: max_chrg * (253 / 230);              //max power bei 253V
+        # pwr_at_com = max_chrg  # <<<<<<<<<<<<<<
+        # register = S32(40149, unit_id, "FedInPwrAtCom", "Wirkleistungsvorgabe [WO]")
+        # register.write_value(client, pwr_at_com)  # min -3680
+        # _LOGGER.debug("%s:=%i", register.name, pwr_at_com)
 
         # Close the connection
         client.close()
 
     @staticmethod
     def battery_stop_charging_from_net(
-        client: ModbusTcpClient, unit_id: int, discharge_power: int = None
+            client: ModbusTcpClient, unit_id: int, discharge_power: int = None
     ):
         """Stop the battery loading from net."""
 
@@ -209,7 +211,7 @@ class Api:  # noqa: D101
 
     @staticmethod
     def battery_start_discharging(
-        client: ModbusTcpClient, unit_id: int, discharge_power: int = None
+            client: ModbusTcpClient, unit_id: int, discharge_power: int = None
     ):
         """Allow the battery to discharge its energy."""
 
@@ -217,7 +219,7 @@ class Api:  # noqa: D101
         max_dischrg = (
             discharge_power
             if discharge_power is not None
-            and 0 <= discharge_power < Api.max_discharge_power_battery
+               and 0 <= discharge_power < Api.max_discharge_power_battery
             else Api.max_discharge_power_battery
         )
 

@@ -7,7 +7,7 @@ from homeassistant.const import Platform
 
 NAME: Final = "SMA Charge Ctrl"
 DOMAIN: Final = "sma_charge_ctrl"
-VERSION: Final = "0.1.0"
+VERSION: Final = "0.4.2"
 DEPOT_URL: Final = "https://github.com/engelchrisi/sma_charge_ctrl"
 
 
@@ -43,4 +43,4 @@ ATTR_TO_PROPERTY: Final = [
 
 CONF_UNIT_ID = "unit_id"
 
-UPDATE_MIN_TIME: Final = timedelta(seconds=60)
+UPDATE_MIN_TIME: Final = timedelta(seconds=5 * 60)

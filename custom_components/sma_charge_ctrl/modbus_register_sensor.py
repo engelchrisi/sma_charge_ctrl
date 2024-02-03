@@ -4,6 +4,7 @@ from collections.abc import Mapping
 import logging
 from typing import Any, Optional
 
+import pymodbus
 from pymodbus.client import ModbusTcpClient
 
 from homeassistant.components.sensor import (
@@ -118,12 +119,16 @@ class ModbusRegisterSensor(SensorEntity):
 
     async def async_update(self):
         """Re-read via modbus."""
-        value = self._register.read_value(self._pymodbus_client)
-        self._attr_native_value = value.value if value is not None else None
-        self.last_timestamp = self._register.last_timestamp
-        _LOGGER.debug(
-            "ModbusReader.async_central_update %s: Read Value: %s %s",
-            self.name,
-            self._attr_native_value,
-            self._attr_native_unit_of_measurement,
-        )
+        try:
+            value = self._register.read_value(self._pymodbus_client)
+            self._attr_native_value = value.value if value is not None else None
+            self.last_timestamp = self._register.last_timestamp
+            _LOGGER.debug(
+                "ModbusReader.async_central_update %s: Read Value: %s %s",
+                self.name,
+                self._attr_native_value,
+                self._attr_native_unit_of_measurement,
+            )
+        except pymodbus.exceptions.ConnectionException as e:
+            # as this happens every night around 02:00 avoid error traces
+            _LOGGER.warning()(f"Modbus Connection Exception: {e}")
