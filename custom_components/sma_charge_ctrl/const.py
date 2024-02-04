@@ -7,9 +7,8 @@ from homeassistant.const import Platform
 
 NAME: Final = "SMA Charge Ctrl"
 DOMAIN: Final = "sma_charge_ctrl"
-VERSION: Final = "0.4.2"
+VERSION: Final = "0.5.0"
 DEPOT_URL: Final = "https://github.com/engelchrisi/sma_charge_ctrl"
-
 
 STARTUP_MESSAGE: Final = f"""
 -------------------------------------------------------------------

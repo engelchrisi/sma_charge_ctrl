@@ -7,6 +7,7 @@ from pymodbus.client import ModbusTcpClient
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder, BinaryPayloadDecoder
 
+# print("Register: before _LOGGER")
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -88,8 +89,10 @@ class ModbusRegisterBase:  # noqa: D101
 
         if response.isError():
             _LOGGER.error("Error response: %s", str(response))
+            _LOGGER.error("%s:=%i", self.name, value_to_write)
             return False
         else:
+            _LOGGER.info("%s:=%i", self.name, value_to_write)
             return True
 
     # def is_null(self):

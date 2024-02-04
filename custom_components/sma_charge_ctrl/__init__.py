@@ -49,7 +49,7 @@ def _setup_services(hass: core.HomeAssistant, client: ModbusTcpClient, unit_id: 
 
     def _battery_start_discharging(call: core.ServiceCall) -> None:
         """Handle the service call."""
-        discharge_power = call.data.get("discharge_power", 1500)
+        discharge_power = call.data.get("discharge_power", None)
         Api.battery_start_discharging(client, unit_id, discharge_power)
 
     hass.services.async_register(
