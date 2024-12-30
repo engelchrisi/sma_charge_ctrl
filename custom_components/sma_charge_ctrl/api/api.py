@@ -59,6 +59,7 @@ class Api:  # noqa: D101
             else Api.max_charge_power_battery
         )
 
+        # 802???
         return Api._execute_cmd(client, unit_id, max_chrg, 0)
 
     @staticmethod
@@ -141,9 +142,9 @@ class Api:  # noqa: D101
             "Betriebsart des Batterie-Management-Systems: 303 = Aus, 308 = Ein, 2289 = Batterie laden, 2290 = Batterie entladen, 2424 = Voreinstellung [WO]",
         )
         # register = U32(41259, "CmpBMSOpMod", unit_id, "Betriebsart des Batterie-Management-Systems: 303 = Aus, 308 = Ein, 2289 = Batterie laden, 2290 = Batterie entladen, 2424 = Voreinstellung [WO]")
-        # value_to_write= 308   # Ein(On)
+        # value_to_write = 308  # Ein(On)
         # value_to_write = 1438  # Automatik(Auto)
-        # value_to_write = 2289 # Batterie laden(BatChaMod)
+        # value_to_write = 2289  # Batterie laden(BatChaMod)
         # value_to_write= 2290 # Batterie entladen(BatDschMod)
         value_to_write = 2424  # Voreinstellung(Dft)
         register.write_value(client, value_to_write)
